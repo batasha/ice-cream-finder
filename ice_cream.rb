@@ -72,10 +72,10 @@ long = location["lng"]
 
 nearby = get_nearby_shops(lat, long)
 
-nearby.each do |shop|
-	puts shop["name"]
+10.times do |i|
+	puts nearby[i]["name"]
 
-	dest_location = shop["geometry"]["location"]
+	dest_location = nearby[i]["geometry"]["location"]
 	dest_lat = dest_location["lat"]
 	dest_long = dest_location["lng"]
 
@@ -84,7 +84,7 @@ nearby.each do |shop|
 
 
 	directions.each do |step|
-		puts step["html_instructions"]
+		puts Nokogiri::HTML(step["html_instructions"]).text
 	end
 	puts""
 
