@@ -2,41 +2,42 @@ require 'json'
 require 'nokogiri'
 require 'addressable/uri'
 require 'rest-client'
-#require 'key.rb'
-
-# google searech nearby
-# https://maps.googleapis.com/maps/api/place/textsearch/json?
-
-# google geocoding
-# http://maps.googleapis.com/maps/api/geocode/output?parameters
-
-#
-# location = JSON.parse()
-#
+require_relative 'key.rb'
 
 
-location_raw_data = Addressable::URI.new(
-       :scheme => "http",
-       :host => "maps.googleapis.com",
-       :path => "maps/api/geocode/json",
-       :query_values => {
-                         :address => "770 Broadway, New York, NY",
-                         :sensor => "false"
-                        }
-                        ).to_s
+def get_current_location
+	puts "Want some ice cream?"
+	puts "Enter your current address:"
+	address = gets.chomp
 
-geocode_hash = JSON.parse(RestClient.get(location_raw_data))
+	location_query = Addressable::URI.new(
+	       :scheme => "http",
+	       :host => "maps.googleapis.com",
+	       :path => "maps/api/geocode/json",
+	       :query_values => {
+	                       :address => address ? address : "770 Broadway, New York, NY",
+	                       :sensor => "false"
+	                      }
+	                      ).to_s
 
-location = geocode_hash["results"][0]["geometry"]["location"]
+	location_raw = JSON.parse(RestClient.get(location_query))
+
+	location_raw["results"][0]["geometry"]["location"]
+end
+
+
+
+location = get_current_location
+
 lat = location["lat"]
 long = location["lng"]
 
-query = Addressable::URI.new(
+nearby_query = Addressable::URI.new(
        :scheme => "https",
        :host => "maps.googleapis.com",
        :path => "maps/api/place/nearbysearch/json",
        :query_values => {
-                         :key => "AIzaSyCXyL5FbFXq6--2Y_P4IXwySG9E7UIlRt4",
+                         :key => KEY,
                          :location => "#{lat},#{long}",
                          :rankby => "distance",
 												 #:radius => "1000",
@@ -45,20 +46,19 @@ query = Addressable::URI.new(
                         }
                         ).to_s
 
-nearby_raw_data = JSON.parse(RestClient.get(query))
+nearby_raw = JSON.parse(RestClient.get(nearby_query))
 
-nearby_shops = nearby_raw_data["results"]
+nearby = nearby_raw["results"]
 
 
-nearby_shops.each do |shop|
+nearby.each do |shop|
 	puts shop["name"]
+
 	dest_location = shop["geometry"]["location"]
 	dest_lat = dest_location["lat"]
 	dest_long = dest_location["lng"]
 
-	puts ""
-
-directions_raw = Addressable::URI.new(
+	directions_query = Addressable::URI.new(
        :scheme => "http",
        :host => "maps.googleapis.com",
        :path => "maps/api/directions/json",
@@ -69,8 +69,14 @@ directions_raw = Addressable::URI.new(
                         }
                         ).to_s
 
-directions = JSON.parse(RestClient.get(directions_raw))
-puts directions
+
+	directions_raw = JSON.parse(RestClient.get(directions_query))
+
+	directions = directions_raw["routes"][0]["legs"][0]["steps"]
+	directions.each do |step|
+		puts step["html_instructions"]
+	end
+	puts""
 
 end
 
